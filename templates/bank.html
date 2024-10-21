@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>bank</title>
+</head>
+<body>
+<div>
+    <div id="login" style="display: block;">
+        账号：<input type="text" id="account" placeholder="请输入账号">
+        密码：<input type="password" id="password" placeholder="请输入密码">
+        <button onclick="login()">登录</button>
+    </div>
+    <div id="bank" style="display: none;">
+        <div id="balance">
+            <p><span id="balance_num"></span></p>
+            <div>
+                存款金额：<input type="text" id="deposit" placeholder="请输入存款金额">
+                <button onclick="bank(3)">存款</button>
+            </div>
+            <div>
+                取款金额：<input type="text" id="withdrawal" placeholder="请输入取款金额">
+                <button onclick="bank(4)">取款</button>
+            </div>
+        </div>
+
+        <button onclick="bank(5)">销户</button>
+    </div>
+</div>
+</body>
+<script src="https://s3.pstatp.com/cdn/expire-1-M/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    let balance_num = 0 // 账户余额
+
+    function login() {
+        let account = document.getElementById("account").value;  // 获取账号和密码
+        let password = document.getElementById("password").value;
+        if (account === "" || password === "") {
+            alert("账号或密码不能为空")
+            return
+        }
+        let body = {
+            "account": account,
+            "psd": password,
+            "type": 1
+        }
+        //登录
+        $.ajax({
+            url: "/bank/login",
+            type: "POST",
+            data: JSON.stringify(body),
+            success: function (data) {
+                if (data.code === 200) {
+                    document.getElementById("login").style.display = "none"; // 隐藏登录
+                    document.getElementById("bank").style.display = "block"; // 显示银行的操作
+                    // 把账号和密码写入本地缓存
+                    localStorage.setItem("account", account);
+                    localStorage.setItem("password", password);
+                    document.getElementById("balance_num").innerHTML = "余额：" + data.data  // 显示余额
+                    balance_num = data.data
+                } else {
+                    alert(data.msg)
+                }
+            }
+        })
+    }
+
+    function bank(type) {
+        let money = 0
+        if (type === 3) {
+            money = document.getElementById("deposit").value
+            if (money === "") {
+                alert("请输入存款金额")
+                return
+            }
+        } else if (type === 4) {
+            money = document.getElementById("withdrawal").value
+            if (money === "") {
+                alert("请输入取款金额")
+                return
+            } else if (money > balance_num) {
+                alert("取款金额不能超过现有余额")
+                return
+            }
+        }
+        let body = {
+            "account": localStorage.getItem("account"),
+            "psd": localStorage.getItem("password"),
+            "type": type,
+            "money": money,
+
+        }
+        $.ajax({
+            url: "/bank/login",
+            type: "POST",
+            data: JSON.stringify(body),
+            success: function (data) {
+                console.log(data)
+                if (data.code === 200) {
+                    document.getElementById("login").style.display = "none";
+                    document.getElementById("bank").style.display = "block";
+                    if (type === 3 || type === 4) {
+                        document.getElementById("balance_num").innerHTML = "余额：" + data.data
+                        balance_num = data.data
+                        document.getElementById("withdrawal").value = ""
+                        document.getElementById("deposit").value = ""
+                        
+                    } else if (type === 5) {
+                        alert("销户成功")
+                        document.getElementById("login").style.display = "block";
+                        document.getElementById("bank").style.display = "none";
+                    }
+                } else {
+                    alert(data.msg)
+                }
+            }
+        })
+    }
+
+</script>
+</html>
