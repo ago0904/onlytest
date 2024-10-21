@@ -9,6 +9,7 @@ def index(request):
     return render(request, 'bank.html')
 
 
+
 def bank_login(request):
     from studyScript import bank
     body = json.loads(request.body.decode('utf-8'))
